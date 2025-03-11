@@ -16,8 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
+from django.views.generic import RedirectView
 
 urlpatterns = [
+    path('', RedirectView.as_view(url='spotify_oauth/', permanent=False)),
     path('spotify_oauth/', include('spotify_oauth.urls')),
     path('admin/', admin.site.urls),
 ]
