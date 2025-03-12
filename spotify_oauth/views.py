@@ -28,7 +28,7 @@ def spotify_login(request):
 
 def spotify_callback(request):
     """
-    Handles the callback from Spotify and stores the access token
+    Handles the callback from Spotify OAuth and stores the access token
     """
     code = request.GET.get('code')
     sp_oauth = SpotifyOAuth(
@@ -119,7 +119,7 @@ def home(request):
     }
     return render(request,'home.html', context)
 
-def logout(request):
+def spotify_logout(request):
     """
     Clears the user's session
     """
