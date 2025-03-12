@@ -125,4 +125,5 @@ def spotify_logout(request):
     """
     if 'spotify_user_id' in request.session:
         del request.session['spotify_user_id']
-    return redirect('spotify_login')
+        request.session.flush()
+    return redirect('/spotify_oauth/spotify/login/')
