@@ -142,6 +142,8 @@ def home(request):
             time_range=time_range,
             artist_genres=", ".join(genres)  
         )
+    
+    return render(request, 'dashboard.html', {'user_tracks': user_tracks})
 
 def spotify_logout(request):
     """
