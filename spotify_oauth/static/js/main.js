@@ -31,7 +31,8 @@ const App = () => {
         <div className="logo">Spotify Insights</div>
         <nav>
           <ThemeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
-          <a href="{% url 'logout' %}" className="btn">Logout</a>
+          <a href="{% url 'spotify_logout' %}" class="btn">Logout</a>
+
         </nav>
       </header>
       
