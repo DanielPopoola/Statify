@@ -1,5 +1,4 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,8 +13,8 @@
 </head>
 <body>
     <div id="spotify-dashboard-root"></div>
-
     <script>
+        // This will be filled by Django with the user's data
         const userData = {
             tracks: {
                 short_term: {{ tracks_short_term|safe }},
@@ -28,9 +27,9 @@
                 long_term: {{ artists_long_term|safe }}
             }
         };
-
     </script>
-    
+
+    <!-- React Components -->
     <script type="text/babel" src="{% static 'js/components/TrackCard.js' %}"></script>
     <script type="text/babel" src="{% static 'js/components/ArtistCard.js' %}"></script>
     <script type="text/babel" src="{% static 'js/components/TopItemsFilter.js' %}"></script>
