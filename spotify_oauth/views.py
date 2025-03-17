@@ -112,77 +112,90 @@ def get_image_url(images, default_size='medium'):
     # If we only have one image, return it
     return images[0]['url']
 
-def dashboard(request):  
-    """  
-    Dashboard view that displays user's top tracks and artists  
-    """  
-    spotify_user_id = request.session.get('spotify_user_id')  
 
-    if not spotify_user_id:  
-        return redirect('spotify_login')  
+def dashboard(request):
+    """
+    Dashboard view that displays user's top tracks and artists
+    """
+    spotify_user_id = request.session.get('spotify_user_id')
+
+    if not spotify_user_id:
+        return redirect('spotify_login')
     
-    token = get_user_token(spotify_user_id)  
+    token = get_user_token(spotify_user_id)
 
-    if not token:  
-        return redirect('spotify_login')  
+    if not token:
+        return redirect('spotify_login')
     
-    if token.expires_at < int(time.time()):  
-        token = refresh_spotify_token(token)  
+    if token.expires_at < int(time.time()):
+        token = refresh_spotify_token(token)
 
-    sp = spotipy.Spotify(auth=token.access_token, requests_timeout=20)  
+    sp = spotipy.Spotify(auth=token.access_token, requests_timeout=20)
 
-    time_ranges = ["short_term", "medium_term", "long_term"]  
-    tracks_data = {}  
-    artists_data = {}  
+    time_ranges = ["short_term", "medium_term", "long_term"]
+    tracks_data = {}
+    artists_data = {}
 
-    for time_range in time_ranges:  
-        # Get top tracks  
-        top_tracks = sp.current_user_top_tracks(limit=10, time_range=time_range)  
-        tracks_data[time_range] = []  
+    for time_range in time_ranges:
+        # Get top tracks
+        top_tracks = sp.current_user_top_tracks(limit=10, time_range=time_range)
+        tracks_data[time_range] = []
 
-        for track in top_tracks['items']:  
-            artist_id = track['artists'][0]['id']  # Assuming the first artist is the main artist  
-            artist_name = track['artists'][0]['name']  
-            album_name = track['album']['name']  
-            album_image = get_image_url(track['album']['images'])  # Get album image URL  
-            popularity = track['popularity']  
-            spotify_url = track['external_urls']['spotify']  
+        for track in top_tracks['items']:
+            artist_id = track['artists'][0]['id']
+            artist_data = sp.artist(artist_id)
+            album_image = get_image_url(track['album']['images'])
+            genres = artist_data.get('genres', [])
 
-            # Add track information to the tracks_data  
-            tracks_data[time_range].append({  
-                'track_name': track['name'],  
-                'artist_name': artist_name,  
-                'album_name': album_name,  
-                'album_image': album_image,  
-                'popularity': popularity,  
-                'spotify_url': spotify_url,  
-            })  
+            track_info = {
+                "track_name": track['name'],
+                "artist_name": track['artists'][0]['name'],
+                "album_name": track['album']['name'],
+                "album_image": album_image,
+                "popularity": track['popularity'],
+                "spotify_url": track['external_urls']['spotify'],
+                "genres": genres
+            }
+            tracks_data[time_range].append(track_info)
 
-        # Get top artists  
-        top_artists = sp.current_user_top_artists(limit=10, time_range=time_range)  
-        artists_data[time_range] = []  
+            # Store in database
+            UserTrack.objects.update_or_create(
+                spotify_user_id=spotify_user_id,
+                track_name=track['name'],
+                artist_name=track['artists'][0]['name'],
+                album_name=track['album']['name'],
+                track_popularity=track['popularity'],
+                track_url=track['external_urls']['spotify'],
+                time_range=time_range,
+                artist_genres=", ".join(genres)  
+            )
+        
+        # Get top artists
+        top_artists = sp.current_user_top_artists(limit=10, time_range=time_range)
+        artists_data[time_range] = []
 
-        for artist in top_artists['items']:  
-            artist_image = get_image_url(artist['images'])  # Get artist image URL  
-            followers = artist['followers']['total']  
-            popularity = artist['popularity']  
-            spotify_url = artist['external_urls']['spotify']  
+        for artist in top_artists['items']:
+            artists_image = get_image_url(artist['images'])
+            artist_info = {
+                "name": artist['name'],
+                "image": artists_image,
+                "popularity": artist['popularity'],
+                "genres": artist.get('genres', []),
+                "spotify_url": artist['external_urls']['spotify'],
+                "followers": artist['followers']['total']
+            }
+            artists_data[time_range].append(artist_info)
 
-            # Add artist information to the artists_data  
-            artists_data[time_range].append({  
-                'name': artist['name'],  
-                'image': artist_image,  
-                'followers': followers,  
-                'popularity': popularity,  
-                'spotify_url': spotify_url,  
-            })  
+    context = {
+        'tracks_short_term': json.dumps(tracks_data['short_term']),
+        'tracks_medium_term': json.dumps(tracks_data['medium_term']),
+        'tracks_long_term': json.dumps(tracks_data['long_term']),
+        'artists_short_term': json.dumps(artists_data['short_term']),
+        'artists_medium_term': json.dumps(artists_data['medium_term']),
+        'artists_long_term': json.dumps(artists_data['long_term']),
+    }
 
-    # Render the dashboard template with the collected data  
-    context = {  
-        'tracks_data': tracks_data,  
-        'artists_data': artists_data,  
-    }  
-    return render(request, 'dashboard.html', context) 
+    return render(request, 'dashboard.html', context)
 
 def spotify_logout(request):
     """

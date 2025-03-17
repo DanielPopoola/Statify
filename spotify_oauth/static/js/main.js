@@ -16,8 +16,14 @@ const App = () => {
       }
     }
   }, []);
+
   
   const currentData = userData[contentType][timeRange];
+
+  if (!userData || !userData[contentType] || !userData[contentType][timeRange]) {
+    return <div>Loading data... Please wait.</div>;
+  }
+  
 
   return (
     <div className="container">
@@ -25,7 +31,7 @@ const App = () => {
         <div className="logo">Spotify Insights</div>
         <nav>
           <ThemeToggle darkMode={darkMode} setDarkMode={setDarkMode} />
-          <a href="{% url 'spotify_logout' %}" className="btn">Logout</a>
+          <a href="{% url 'logout' %}" className="btn">Logout</a>
         </nav>
       </header>
       
