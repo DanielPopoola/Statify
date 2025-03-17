@@ -3,11 +3,6 @@ const TrackCard = ({ track, index }) => {
   return (
     <div className="card">
       <div className="card-img">
-        {track.album_image ? (
-          <img src={track.album_image} alt={track.album_name} />
-        ) : (
-          <span>🎵</span>
-        )}
         <div className="rank">{index + 1}</div>
       </div>
       <div className="card-content">
