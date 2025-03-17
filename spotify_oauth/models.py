@@ -2,6 +2,9 @@ from django.db import models
 
 
 class SpotifyToken(models.Model):
+    """
+    
+    """
     spotify_user_id = models.CharField(max_length=150, unique=True)
     access_token = models.TextField()
     refresh_token = models.TextField()

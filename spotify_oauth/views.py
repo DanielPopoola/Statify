@@ -108,7 +108,7 @@ def home(request):
     if token.expires_at < int(time.time()):
         token = refresh_spotify_token(token)
 
-    sp = spotipy.Spotify(auth=token.access_token)
+    sp = spotipy.Spotify(auth=token.access_token, requests_timeout=10)
 
     top_tracks  = sp.current_user_top_tracks(limit=10, time_range='medium_term')
     user_profile = sp.me()
@@ -121,9 +121,16 @@ def home(request):
 
 def spotify_logout(request):
     """
-    Clears the user's session
+    Clears the user's session and Spotify tokens
     """
+    spotify_user_id = request.session.get('spotify_user_id')
+
+    if spotify_user_id:
+        SpotifyToken.objects.filter(spotify_user_id=spotify_user_id).delete()
+    
+    # Clear session
     if 'spotify_user_id' in request.session:
         del request.session['spotify_user_id']
         request.session.flush()
-    return redirect('/spotify_oauth/spotify/login/')
+    
+    return render(request, 'logout.html')
