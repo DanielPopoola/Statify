@@ -3,6 +3,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import os
 import time
+import json
 from dotenv import load_dotenv
 from django.http import HttpResponse
 from .models import SpotifyToken, UserTrack
@@ -69,7 +70,7 @@ def spotify_callback(request):
     
 def get_user_token(spotify_user_id):
     """
-    Helper function to recieve a user's token
+    Helper function to receive a user's token
     """
     user_tokens = SpotifyToken.objects.filter(spotify_user_id=spotify_user_id)
     if user_tokens.exists():
@@ -87,13 +88,14 @@ def refresh_spotify_token(token_model):
     )
     refreshed_token = sp_oauth.refresh_access_token(token_model.refresh_token)
 
-    token_model.access_token  = refreshed_token['access_token']
+    token_model.access_token = refreshed_token['access_token']
     token_model.expires_at = refreshed_token['expires_at']
     token_model.save()
+    return token_model
 
-def home(request):
+def dashboard(request):
     """
-    Home page view that uses the stored token
+    Dashboard view that displays user's top tracks and artists
     """
     spotify_user_id = request.session.get('spotify_user_id')
 
@@ -111,11 +113,13 @@ def home(request):
     sp = spotipy.Spotify(auth=token.access_token, requests_timeout=20)
 
     time_ranges = ["short_term", "medium_term", "long_term"]
-    user_tracks = {}
+    tracks_data = {}
+    artists_data = {}
 
     for time_range in time_ranges:
+        # Get top tracks
         top_tracks = sp.current_user_top_tracks(limit=10, time_range=time_range)
-        user_tracks[time_range] = []
+        tracks_data[time_range] = []
 
         for track in top_tracks['items']:
             artist_id = track['artists'][0]['id']
@@ -128,22 +132,46 @@ def home(request):
                 "album_name": track['album']['name'],
                 "popularity": track['popularity'],
                 "spotify_url": track['external_urls']['spotify'],
-                "genres":genres
+                "genres": genres
             }
-            user_tracks[time_range].append(track_info)
+            tracks_data[time_range].append(track_info)
 
+            # Store in database
             UserTrack.objects.update_or_create(
-            spotify_user_id=spotify_user_id,
-            track_name=track['name'],
-            artist_name=track['artists'][0]['name'],
-            album_name=track['album']['name'],
-            track_popularity=track['popularity'],
-            track_url=track['external_urls']['spotify'],
-            time_range=time_range,
-            artist_genres=", ".join(genres)  
-        )
-    
-    return render(request, 'dashboard.html', {'user_tracks': user_tracks})
+                spotify_user_id=spotify_user_id,
+                track_name=track['name'],
+                artist_name=track['artists'][0]['name'],
+                album_name=track['album']['name'],
+                track_popularity=track['popularity'],
+                track_url=track['external_urls']['spotify'],
+                time_range=time_range,
+                artist_genres=", ".join(genres)  
+            )
+        
+        # Get top artists
+        top_artists = sp.current_user_top_artists(limit=10, time_range=time_range)
+        artists_data[time_range] = []
+
+        for artist in top_artists['items']:
+            artist_info = {
+                "name": artist['name'],
+                "popularity": artist['popularity'],
+                "genres": artist.get('genres', []),
+                "spotify_url": artist['external_urls']['spotify'],
+                "followers": artist['followers']['total']
+            }
+            artists_data[time_range].append(artist_info)
+
+    context = {
+        'tracks_short_term': json.dumps(tracks_data['short_term']),
+        'tracks_medium_term': json.dumps(tracks_data['medium_term']),
+        'tracks_long_term': json.dumps(tracks_data['long_term']),
+        'artists_short_term': json.dumps(artists_data['short_term']),
+        'artists_medium_term': json.dumps(artists_data['medium_term']),
+        'artists_long_term': json.dumps(artists_data['long_term']),
+    }
+
+    return render(request, 'dashboard.html', context)
 
 def spotify_logout(request):
     """
