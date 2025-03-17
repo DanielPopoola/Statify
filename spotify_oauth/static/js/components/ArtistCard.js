@@ -3,6 +3,11 @@ const ArtistCard = ({ artist, index }) => {
   return (
     <div className="card">
       <div className="card-img">
+        {artist.image ? (
+          <img src={artist.image} alt={artist.name} />
+        ) : (
+          <span>👤</span>
+        )}
         <div className="rank">{index + 1}</div>
       </div>
       <div className="card-content">
