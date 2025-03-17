@@ -5,7 +5,7 @@ import os
 import time
 from dotenv import load_dotenv
 from django.http import HttpResponse
-from .models import SpotifyToken # model for storing tokens
+from .models import SpotifyToken, UserTrack
 
 load_dotenv()
 
@@ -62,7 +62,7 @@ def spotify_callback(request):
         # Store the spotify user id in session to identify the user
         request.session['spotify_user_id'] = spotify_user_id
 
-        return redirect('home')
+        return redirect('dashboard')
     except Exception as e:
         print(f"Error during token exchange: {e}")
         return HttpResponse(f"Authentication failed: {str(e)}")
@@ -108,16 +108,40 @@ def home(request):
     if token.expires_at < int(time.time()):
         token = refresh_spotify_token(token)
 
-    sp = spotipy.Spotify(auth=token.access_token, requests_timeout=10)
+    sp = spotipy.Spotify(auth=token.access_token, requests_timeout=20)
 
-    top_tracks  = sp.current_user_top_tracks(limit=10, time_range='medium_term')
-    user_profile = sp.me()
+    time_ranges = ["short_term", "medium_term", "long_term"]
+    user_tracks = {}
 
-    context = {
-        'user':user_profile,
-        'top_tracks': top_tracks['items']
-    }
-    return render(request,'home.html', context)
+    for time_range in time_ranges:
+        top_tracks = sp.current_user_top_tracks(limit=10, time_range=time_range)
+        user_tracks[time_range] = []
+
+        for track in top_tracks['items']:
+            artist_id = track['artists'][0]['id']
+            artist_data = sp.artist(artist_id)
+            genres = artist_data.get('genres', [])
+
+            track_info = {
+                "track_name": track['name'],
+                "artist_name": track['artists'][0]['name'],
+                "album_name": track['album']['name'],
+                "popularity": track['popularity'],
+                "spotify_url": track['external_urls']['spotify'],
+                "genres":genres
+            }
+            user_tracks[time_range].append(track_info)
+
+            UserTrack.objects.update_or_create(
+            spotify_user_id=spotify_user_id,
+            track_name=track['name'],
+            artist_name=track['artists'][0]['name'],
+            album_name=track['album']['name'],
+            track_popularity=track['popularity'],
+            track_url=track['external_urls']['spotify'],
+            time_range=time_range,
+            artist_genres=", ".join(genres)  
+        )
 
 def spotify_logout(request):
     """
