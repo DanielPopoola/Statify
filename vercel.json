@@ -1,0 +1,20 @@
+{
+  "builds": [{
+      "src": "spotify_dashboard/wsgi.py",
+      "use": "@vercel/python",
+      "config": {
+          "maxLambdaSize": "15mb", 
+          "runtime": "python3.12",
+          "buildCommand": "pip install -r requirements.txt"
+      }
+  }],
+  "routes": [
+      {
+          "src": "/(.*)",
+          "dest": "spotify_dashboard/wsgi.py"
+      }
+  ],
+  "env":{
+      "DJANGO_SETTINGS_MODULE": "spotify_dashboard.settings"
+  }
+}

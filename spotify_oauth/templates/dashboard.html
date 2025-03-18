@@ -1,0 +1,47 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statify</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="spotify-dashboard-root"></div>
+    <script>
+        // This will be filled by Django with the user's data
+        const userData = {
+            tracks: {
+                short_term: {{ tracks_short_term|safe }},
+                medium_term: {{ tracks_medium_term|safe }},
+                long_term: {{ tracks_long_term|safe }}
+            },
+            artists: {
+                short_term: {{ artists_short_term|safe }},
+                medium_term: {{ artists_medium_term|safe }},
+                long_term: {{ artists_long_term|safe }}
+            }
+        };
+        
+    </script>
+
+    <script>
+        const logoutUrl = "{% url 'spotify_logout' %}";
+    </script>
+
+    <!-- React Components -->
+    <script type="text/babel" src="{% static 'js/components/TrackCard.js' %}"></script>
+    <script type="text/babel" src="{% static 'js/components/ArtistCard.js' %}"></script>
+    <script type="text/babel" src="{% static 'js/components/TopItemsFilter.js' %}"></script>
+    <script type="text/babel" src="{% static 'js/components/TracksGrid.js' %}"></script>
+    <script type="text/babel" src="{% static 'js/components/ArtistsGrid.js' %}"></script>
+    <script type="text/babel" src="{% static 'js/components/DataVisualizer.js' %}"></script>
+    <script type="text/babel" src="{% static 'js/components/ThemeToggle.js' %}"></script>
+    <script type="text/babel" src="{% static 'js/main.js' %}"></script>
+</body>
+</html>

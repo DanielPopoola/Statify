@@ -1,0 +1,11 @@
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+.env
+__pycache__/
+.cache
+.vercel
+node_modules/
+id_rsa_github
+id_rsa_github.pub
