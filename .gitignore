@@ -7,3 +7,5 @@ __pycache__/
 .cache
 .vercel
 node_modules/
+id_rsa_github
+id_rsa_github.pub
