@@ -1,11 +1,19 @@
 {
-    "builds": [
-      { "src": "manage.py", "use": "@vercel/python" },
-      { "src": "static/**", "use": "@vercel/static" }
-    ],
-    "routes": [
-      { "src": "/static/(.*)", "dest": "/static/$1" },
-      { "src": "/(.*)", "dest": "manage.py" }
-    ]
+  "builds": [{
+      "src": "spotify_dashboard//wsgi.py",
+      "use": "@vercel/python",
+      "config": {
+          "maxLambdaSize": "15mb", 
+          "runtime": "python3.12"
+      }
+  }],
+  "routes": [
+      {
+          "src": "/(.*)",
+          "dest": "spotify_dashboard/wsgi.py"
+      }
+  ],
+  "env":{
+      "DJANGO_SETTINGS_MODULE": "spotify_dashboard.settings"
   }
-  
+}
